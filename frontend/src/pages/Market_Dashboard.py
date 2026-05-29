@@ -35,21 +35,44 @@ ticker_name = st.text_input(label="Ticker Name")
 time_period = st.selectbox("Time Period",["1d","5d","1mo","3mo","6mo","1y","2y","5y"])
 
 dashboard_button = st.button(label="Search",key="dashboard_button")
+col1, col2 = st.columns([0.9, 0.2])
 
-if dashboard_button:
-    if ticker_name:
-        try:
-            data,metadata = get_ticker_data(time_period,ticker_name)
-            if data.shape[0] == 0:
-                st.error("Rate limited, try again later.")
-            else:
-                x = time_period_dict[time_period]
-                graph_data = data.head(x)[::-1]
-                fig = go.Figure(data = [go.Candlestick(x=graph_data.index,open=graph_data["1. open"],high=graph_data["2. high"],low=graph_data["3. low"],close=graph_data["4. close"])])
-                st.plotly_chart(fig)
-        except Exception as e:
-            st.error(f"Could not fetch data: {e}")
-    else:
-        st.error("Please input ticker name.")
+with col2:
+    ma20 = st.toggle("MA20")
+    rsi_toggle = st.toggle("RSI")
+    macd = st.toggle("MACD")
+with col1:
+    if dashboard_button:
+        if ticker_name:
+            try:
+                data,metadata = get_ticker_data(time_period,ticker_name)
+                st.session_state.ticker_data = data
+            except Exception as e:
+                st.error(f"Could not fetch data: {e}")
+        else:
+            st.error("Please input ticker name.")
+    if 'ticker_data' in st.session_state:
+        data = st.session_state['ticker_data']
+        if data.shape[0] == 0:
+            st.error("Rate limited, try again later.")
+        else:
+            x = time_period_dict[time_period]
+            graph_data = data.head(x)[::-1]
+            fig = go.Figure(data = [go.Candlestick(x=graph_data.index,open=graph_data["1. open"],high=graph_data["2. high"],low=graph_data["3. low"],close=graph_data["4. close"],name="Ticker")])
+            if ma20:
+                ma20_value = graph_data["4. close"].rolling(window = 20).mean()  
+                fig.add_traces([go.Scatter(x=graph_data.index,y=ma20_value,name = "MA20")])
+            st.plotly_chart(fig)
+            if rsi_toggle:
+                delta = graph_data["4. close"].diff()
+                average_gain = delta.clip(lower=0).rolling(14).mean()
+                average_loss = -delta.clip(upper=0).rolling(14).mean()
+                rsi = 100 - (100/(1+(average_gain/average_loss)))
+                fig1 = go.Figure(data = [go.Scatter(x=graph_data.index,y=rsi,name= "RSI")])
+                st.plotly_chart(fig1)
+            
+                
 
-        
+ 
+
+    
