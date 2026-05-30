@@ -39,10 +39,19 @@ dashboard_button = st.button(label="Search",key="dashboard_button")
 toggle_container = st.container(border = False)
 toggle_column1, toggle_column2, toggle_column3 = toggle_container.columns(3)
 
+ma20=False
+rsi_toggle=False
+
 with toggle_column1:
-    ma20 = st.toggle("MA20")
+    if time_period in time_period_list[:2]:
+        ma20 = st.toggle("MA20",disabled = True, help="Requires at least 1 month of data")
+    else:  
+        ma20 = st.toggle("MA20")
 with toggle_column2:
-    rsi_toggle = st.toggle("RSI")
+    if time_period in time_period_list[:2]:
+        rsi_toggle = st.toggle("RSI",disabled = True, help="Requires at least 1 month of data")
+    else:  
+        rsi_toggle = st.toggle("RSI")
 with toggle_column3:
     macd = st.toggle("MACD")
 
@@ -75,12 +84,54 @@ with col1:
                 ma20_value = graph_data["4. close"].rolling(window = 20).mean()  
                 fig.add_traces([go.Scatter(x=graph_data.index,y=ma20_value,name = "")])
                 fig.update_layout(showlegend = False)
-            st.plotly_chart(fig)       
-    if rsi_toggle and col2:
-        with col2:
-            delta = graph_data["4. close"].diff()
-            average_gain = delta.clip(lower=0).rolling(14).mean()
-            average_loss = -delta.clip(upper=0).rolling(14).mean()
-            rsi = 100 - (100/(1+(average_gain/average_loss)))
-            fig1 = go.Figure(data = [go.Scatter(x=graph_data.index,y=rsi,name= "RSI")])
-            st.plotly_chart(fig1)
+            st.plotly_chart(fig)
+                   
+        if rsi_toggle and col2:
+            with col2:
+                delta = graph_data["4. close"].diff()
+                average_gain = delta.clip(lower=0).rolling(14).mean()
+                average_loss = -delta.clip(upper=0).rolling(14).mean()
+                rsi = 100 - (100/(1+(average_gain/average_loss)))
+                fig1 = go.Figure(data = [go.Scatter(x=graph_data.index,y=rsi,name= "RSI")])
+                st.plotly_chart(fig1)
+        if macd:
+            macd_multiplier_values = {
+                "12": 2/13,
+                "26": 2/27
+            }
+            ema_values = {
+                "9": float(0),
+                "12":float(0),
+                "26":float(0),
+            }
+            macd_point_list = []
+            signal_point_list = []
+            for x in graph_data["4. close"]:
+                for key,values in macd_multiplier_values.items():
+                    if ema_values[key] == 0:    
+                        base_value = 0
+                    else:
+                        base_value = ema_values[key]
+                    new_value = x
+                    if base_value == 0:
+                        base_value = new_value
+                    else:
+                        base_value = (new_value*values)+(base_value*(1-values))
+                    ema_values[key] = float(base_value)
+                macd_point = float(ema_values["12"]) - float(ema_values["26"])
+                macd_point_list.append(macd_point)
+            for y in macd_point_list:
+                if ema_values["9"] == 0:
+                    base_signal_value = 0
+                else:
+                    base_signal_value = ema_values["9"]
+                new_signal_value = y
+                if base_signal_value == 0:
+                    base_signal_value = new_signal_value
+                else:
+                    base_signal_value = (float(new_signal_value*0.2) + float(base_signal_value*0.8))
+                ema_values["9"] = base_signal_value
+                signal_point_list.append(base_signal_value)
+            fig2 = go.Figure(data = [go.Scatter(x=graph_data.index,y=macd_point_list,name= "MACD Line")])
+            fig2.add_traces([go.Scatter(x=graph_data.index,y=signal_point_list,name = "Signal Line")])
+            st.plotly_chart(fig2)
