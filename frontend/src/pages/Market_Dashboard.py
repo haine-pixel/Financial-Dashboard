@@ -101,22 +101,17 @@ with col1:
             }
             ema_values = {
                 "9": float(0),
-                "12":float(0),
-                "26":float(0),
+                "12":float(graph_data["4. close"].head(int(12)).mean()),
+                "26":float(graph_data["4. close"].head(int(26)).mean()),
             }
             macd_point_list = []
             signal_point_list = []
             for x in graph_data["4. close"]:
                 for key,values in macd_multiplier_values.items():
-                    if ema_values[key] == 0:    
-                        base_value = 0
-                    else:
-                        base_value = ema_values[key]
+                    
+                    base_value = ema_values[key]
                     new_value = x
-                    if base_value == 0:
-                        base_value = new_value
-                    else:
-                        base_value = (new_value*values)+(base_value*(1-values))
+                    base_value = (new_value*values)+(base_value*(1-values))
                     ema_values[key] = float(base_value)
                 macd_point = float(ema_values["12"]) - float(ema_values["26"])
                 macd_point_list.append(macd_point)
@@ -135,3 +130,25 @@ with col1:
             fig2 = go.Figure(data = [go.Scatter(x=graph_data.index,y=macd_point_list,name= "MACD Line")])
             fig2.add_traces([go.Scatter(x=graph_data.index,y=signal_point_list,name = "Signal Line")])
             st.plotly_chart(fig2)
+
+
+
+
+
+
+
+##precaution
+#for x in graph_data["4. close"]:
+                # for key,values in macd_multiplier_values.items():
+                #     if ema_values[key] == 0:    
+                #         base_value = 0
+                #     else:
+                #         base_value = ema_values[key]
+                #     new_value = x
+                #     if base_value == 0:
+                #         base_value = new_value
+                #     else:
+                #         base_value = (new_value*values)+(base_value*(1-values))
+                #     ema_values[key] = float(base_value)
+                # macd_point = float(ema_values["12"]) - float(ema_values["26"])
+                # macd_point_list.append(macd_point)
