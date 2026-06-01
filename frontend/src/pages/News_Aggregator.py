@@ -6,6 +6,13 @@ from dotenv import load_dotenv
 load_dotenv()
 news_api=os.getenv("THENEWSAPI_KEY")
 
+def get_news_data():
+    selected_category = st.session_state["selected_category"]
+    response = requests.get(f"https://api.thenewsapi.com/v1/news/all?categories={selected_category}&api_token={news_api}&language=en&")
+    data = response.json()
+    st.session_state.news_data = data
+
+
 st.page_link("Homepage.py",label="Home")
 st.title("News Aggregator")
 category_container = st.container()
@@ -23,19 +30,41 @@ with cat_col_5:
 with cat_col_6:
     politics = st.button("Politics")
 
-search = st.button("search")
-
-category_list = ["science"]
-
-
 if general:
-    response = requests.get(f"https://api.thenewsapi.com/v1/news/all?categories=general&api_token={news_api}&language=en&")
-    data = response.json()
+    st.session_state.selected_category ="general"
+    get_news_data()
+if science:
+    st.session_state.selected_category ="science"
+    get_news_data()
+if business:
+    st.session_state.selected_category ="business"
+    get_news_data()
+if healthcare:
+    st.session_state.selected_category ="health"
+    get_news_data()
+if tech:
+    st.session_state.selected_category ="tech"
+    get_news_data()
+if politics:
+    st.session_state.selected_category ="politics"
+    get_news_data()
+    
+
+if "selected_category" in st.session_state:
+    selected_category = st.session_state["selected_category"]
+    st.header(f"{selected_category.title()}")
+    st.divider()
+if "news_data" in st.session_state:
+    data = st.session_state["news_data"]
     news_data = data["data"]
     cols = st.columns(len(news_data))
     for id, items in enumerate(news_data):
         with cols[id]:
-                st.header(items["title"])
+                st.markdown(
+    f"<a href='{items['url']}' style='color: white; text-decoration: none;'><h2>{items['title']}</h2></a>", 
+    unsafe_allow_html=True
+)
                 st.text(items["description"])
                 st.image(items["image_url"],width=440)
-                st.text(items["source"])
+                st.text(f"Source: {items['source']}")
+
