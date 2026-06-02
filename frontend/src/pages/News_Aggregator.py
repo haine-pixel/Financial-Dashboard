@@ -57,13 +57,12 @@ if "selected_category" in st.session_state:
 if "news_data" in st.session_state:
     data = st.session_state["news_data"]
     news_data = data["data"]
-    cols = st.columns(len(news_data))
     for id, items in enumerate(news_data):
-        with cols[id]:
-                st.markdown(
-    f"<a href='{items['url']}' style='color: white; text-decoration: none;'><h2>{items['title']}</h2></a>", 
-    unsafe_allow_html=True
-)
+        if id%3 ==0:
+            cols = st.columns(3)
+        with cols[id%3]:
+            with st.container(border=True):
+                st.markdown(f"<a href='{items['url']}' style='color: white; text-decoration: none;'><h3>{items['title']}</h3></a>", unsafe_allow_html=True)
                 st.text(items["description"])
                 st.image(items["image_url"],width=440)
                 st.text(f"Source: {items['source']}")
