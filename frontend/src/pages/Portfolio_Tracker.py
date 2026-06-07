@@ -2,9 +2,18 @@ import streamlit as st
 import bcrypt
 import json
 from pathlib import Path
+from datetime import datetime , date
 
-st.page_link("Homepage.py",label="Home")
+def clear_text():
+    st.session_state["saved_name"] = st.session_state["add_stock_name"]
+    st.session_state["saved_amount"] = st.session_state["add_stock_amount"]
+    st.session_state["saved_value"] = st.session_state["add_stock_value"]
+    st.session_state["add_stock_name"] = ""
+    st.session_state["add_stock_amount"] = ""
+    st.session_state["add_stock_value"] = ""
+    
 st.set_page_config(layout='wide')
+st.page_link("Homepage.py",label="Home")
 st.title("Portfolio Tracker")
 file_path = Path(__file__).parent.parent.parent / "data" / "sample.json"
 file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -23,7 +32,6 @@ if not st.session_state["login"]:
 
     user_name = st.text_input("Username")
     user_pass = st.text_input("Password",type="password")
-
     register_button = st.button("Register")
     login_button = st.button("Login")
     if register_button:
@@ -50,6 +58,7 @@ if not st.session_state["login"]:
                 result = bcrypt.checkpw(userBytes,hash)
                 if result:
                     st.session_state["login"] = True
+                    st.session_state["user_name"] = user_name
                     st.rerun()
                 else:
                     st.write("login failed, please ensure username and password is correct")
@@ -65,13 +74,26 @@ else:
     search_container = st.container()
     scol1,scol2,scol3,scol4 = search_container.columns([5,2,2,1],vertical_alignment="bottom",)
     with scol1:
-        add_stock_name = st.text_input("Stock Ticker:")
+        add_stock_name = st.text_input("Stock Ticker:",key="add_stock_name")
     with scol2:
-        add_stock_amount = st.text_input("Amount of Stock:")
+        add_stock_amount = st.text_input("Amount of Stock:",key="add_stock_amount")
     with scol3:
-        add_stock_value = st.text_input("Price of Stock")
+        add_stock_value = st.text_input("Price of Stock",key="add_stock_value")
     with scol4:
-        add_stock_button = st.button("Add Stock")
+        add_stock_button = st.button("Add Stock", on_click=clear_text)
+    if add_stock_button:
+        stock_data = data[st.session_state["user_name"]]["stock_data"]
+        if st.session_state.saved_name not in stock_data:
+            stock_data[st.session_state.saved_name] = {}
+        stock_data[st.session_state.saved_name][str(datetime.today().strftime("%Y-%m-%d %H:%M:%S"))] = {
+        "amount": st.session_state.saved_amount,
+        "price": st.session_state.saved_value
+        }
+        json_str = json.dumps(data,indent=3)
+        with open(file_path,"w") as f:
+            f.write(json_str)
+            
+            
     st.divider()
     top_container = st.container()
     tcol1,tcol2,tcol3,tcol4 = top_container.columns(4,border=True)
