@@ -3,7 +3,19 @@ import bcrypt
 import json
 from pathlib import Path
 from datetime import datetime , date
+from alpha_vantage.timeseries import TimeSeries
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
+alpha_key = os.getenv("ALPHA_VANTAGE_KEY")
+ts = TimeSeries(key=alpha_key, output_format='pandas')
+
+@st.cache_data
+def get_ticker_data(ticker_name):
+    data,meta_data = ts.get_daily(ticker_name,outputsize="compact")
+    return data, meta_data
+    
 def clear_text():
     st.session_state["saved_name"] = st.session_state["add_stock_name"]
     st.session_state["saved_amount"] = st.session_state["add_stock_amount"]
@@ -11,7 +23,7 @@ def clear_text():
     st.session_state["add_stock_name"] = ""
     st.session_state["add_stock_amount"] = ""
     st.session_state["add_stock_value"] = ""
-    
+#setting up of page    
 st.set_page_config(layout='wide')
 st.page_link("Homepage.py",label="Home")
 st.title("Portfolio Tracker")
@@ -27,13 +39,15 @@ else:
         
 if "login" not in st.session_state:
     st.session_state["login"] = False
-    
+
+#login page
 if not st.session_state["login"]:
 
     user_name = st.text_input("Username")
     user_pass = st.text_input("Password",type="password")
     register_button = st.button("Register")
     login_button = st.button("Login")
+# registration of user
     if register_button:
         if user_name not in data:
             bytes = user_pass.encode('utf-8')
@@ -51,6 +65,7 @@ if not st.session_state["login"]:
         else:
             st.write("Username is in use.")
 
+#login logic
     if login_button:
             if user_name in data:
                 userBytes = user_pass.encode('utf-8')
@@ -71,6 +86,8 @@ else:
     if logout_button:
         st.session_state["login"] = False
         st.rerun()
+        
+# Code for input of stock data
     search_container = st.container()
     scol1,scol2,scol3,scol4 = search_container.columns([5,2,2,1],vertical_alignment="bottom",)
     with scol1:
@@ -92,19 +109,41 @@ else:
         json_str = json.dumps(data,indent=3)
         with open(file_path,"w") as f:
             f.write(json_str)
-            
-            
+
+#Code for Stock Information
     st.divider()
     top_container = st.container()
     tcol1,tcol2,tcol3,tcol4 = top_container.columns(4,border=True)
+    
+#calculation for stock data
+    personal_stock_data = data[st.session_state.user_name]["stock_data"]
+    total_stock_value = 0
+    total_profit = 0
+    total_amount_invested = 0
+    total_number_of_stocks_held = 0
+    for stocks in personal_stock_data:
+        ticker_data,meta_data = get_ticker_data(stocks)
+        latest_price = ticker_data["4. close"].values[0]
+        for key, values in personal_stock_data[stocks].items():
+            amount = float(values["amount"])
+            price = float(values["price"])
+            total_stock_value += float(amount * latest_price)
+            total_profit += ((latest_price-price)*amount)
+            total_amount_invested += (amount * price)
+            total_number_of_stocks_held += amount
+        
+#Total stock price
     with tcol1:
-        st.write("Total Stock Value")
+        st.write(f"Total Stock Value: ${total_stock_value:.2f}")
+            
+#Total stock profits
     with tcol2:
-        st.write("Total Profit")
+        st.write(f"Total Profit: ${total_profit:.2f}")
+        
     with tcol3:
-        st.write("Placeholder")
+        st.write(f"Total Amount Invested: ${total_amount_invested:.2f}")
     with tcol4:
-        st.write("Placeholder")
+        st.write(f"Number of Stocks Held: {int(total_number_of_stocks_held)}")
     bottom_container = st.container()
     bcol1,bcol2 = bottom_container.columns(2,border=True)
     with bcol1:
