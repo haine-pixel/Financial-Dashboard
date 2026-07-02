@@ -8,8 +8,6 @@ import os
 from dotenv import load_dotenv
 import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
-
 
 load_dotenv()
 alpha_key = os.getenv("ALPHA_VANTAGE_KEY")
@@ -146,14 +144,9 @@ else:
         personal_stock_data_values.append(x_stock_value)
         personal_stock_data_labels.append(stocks)
         personal_stock_data_gains.append(x_stock_gain)
-    graph_data ={
-        "stock_name": personal_stock_data_labels,
-        "allocation": personal_stock_data_values,
-        "gains": personal_stock_data_gains
-    }
-    
+
     graph_df = pd.DataFrame(graph_data)
-    
+           
     with tcol1:
         st.write(f"Total Stock Value: ${total_stock_value:.2f}")
     with tcol2:
@@ -167,38 +160,25 @@ else:
     bottom_container = st.container()
     bcol1,bcol2 = bottom_container.columns(2,border=True)
     with bcol1:
-        st.write("Portfolio Pie Chart")
+        st.write("Portfolio Pie ")
         fig, ax = plt.subplots()
         cmap_colors = plt.cm.Pastel2.colors 
-        ax.pie(personal_stock_data_values, labels=personal_stock_data_labels,textprops={'color': 'white'}, autopct='%1.1f%%', startangle=90,colors=cmap_colors)
+        ax.pie(personal_stock_data_values, labels=personal_stock_data_labels, autopct='%1.1f%%', startangle=90,colors=cmap_colors)
         ax.axis('equal')
-        fig.patch.set_facecolor('none')
+        fig.patch.set_facecolor('white')
         st.pyplot(fig)
         
     with bcol2:
         st.write("Portfolio information: Value/Invested, Gains, Allocation")
-        y = np.arange(len(personal_stock_data_labels))
-        height = 0.35
-        fig, ax = plt.subplots(figsize=(10, 6))
-
-        rects1 = ax.barh(y + height/2, personal_stock_data_gains, height, label='Gains', color='#1f77b4')
-
-        rects2 = ax.barh(y - height/2, personal_stock_data_values, height, label='Allocation', color='#ff7f0e')
-
+       height = 0.35
+       fig, ax = plt.subplots()
+       rects1 = ax.barh(y + height/2,personal_stock_data_gains , height, label='Group 1', color='#1f77b4')
+       rects2 = ax.barh(y - height/2,personal_stock_data_values, height, label='Group 2', color='#ff7f0e')
+        ax.set_xlabel('Values')
+        ax.set_ylabel('Stock Name')
         ax.set_yticks(y)
-        ax.set_yticklabels(personal_stock_data_labels,color="white")
-        ax.legend()
+        ax.set_yticklabels(categories)
+        ax.legend(personal_stock_data_labels)
 
-        # Optional: Add data labels to the end of each bar
-        ax.bar_label(rects1, padding=3,color ="white")
-        ax.bar_label(rects2, padding=3,color ="white")
-        for spine in ax.spines.values():
-            spine.set_visible(False)
-        fig.patch.set_facecolor('none')
-        ax.patch.set_facecolor('none')
         plt.tight_layout()
-
-        # 6. Render the Plot in Streamlit
         st.pyplot(fig)
-   
-
