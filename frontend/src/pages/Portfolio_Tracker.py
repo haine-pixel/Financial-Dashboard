@@ -189,7 +189,6 @@ else:
         ax.set_yticklabels(personal_stock_data_labels,color="white")
         ax.legend()
 
-        # Optional: Add data labels to the end of each bar
         ax.bar_label(rects1, padding=3,color ="white")
         ax.bar_label(rects2, padding=3,color ="white")
         for spine in ax.spines.values():
@@ -198,7 +197,6 @@ else:
         ax.patch.set_facecolor('none')
         plt.tight_layout()
 
-        # 6. Render the Plot in Streamlit
         st.pyplot(fig)
    
 
